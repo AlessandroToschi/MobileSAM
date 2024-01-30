@@ -97,16 +97,7 @@ class MaskDecoder(nn.Module):
             sparse_prompt_embeddings=sparse_prompt_embeddings,
             dense_prompt_embeddings=dense_prompt_embeddings,
         )
-
-        # Select the correct mask or masks for output
-        if multimask_output:
-            mask_slice = slice(1, None)
-        else:
-            mask_slice = slice(0, 1)
-        masks = masks[:, mask_slice, :, :]
-        iou_pred = iou_pred[:, mask_slice]
-
-        # Prepare output
+        
         return masks, iou_pred
 
     def predict_masks(
