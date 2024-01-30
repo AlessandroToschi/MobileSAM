@@ -133,7 +133,7 @@ class PatchMerging(nn.Module):
     def forward(self, x):
         if x.ndim == 3:
             H, W = self.input_resolution
-            B = len(x)
+            B = x.shape[0]
             # (B, C, H, W)
             x = x.view(B, H, W, -1).permute(0, 3, 1, 2)
 
@@ -335,7 +335,6 @@ class TinyViTBlock(nn.Module):
     def forward(self, x):
         H, W = self.input_resolution
         B, L, C = x.shape
-        assert L == H * W, "input feature has wrong size"
         res_x = x
         if H == self.window_size and W == self.window_size:
             x = self.attn(x)

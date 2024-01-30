@@ -166,6 +166,34 @@ class PromptEncoder(nn.Module):
             )
 
         return sparse_embeddings, dense_embeddings
+    
+    def _embed_points_coreml(
+        self,
+        points: torch.Tensor,
+        labels: torch.Tensor,
+    ) -> torch.Tensor:
+        """Embeds point prompts."""
+        points = points + 0.5  # Shift to center of pixel
+        point_embedding = self.pe_layer.forward_with_coords(points, self.input_image_size)
+        mask = (labels == -1).unsqueeze(-1).expand_as(point_embedding)
+        point_embedding = torch.where(mask, self.not_a_point_embed.weight, point_embedding)
+        mask = (labels == 0).unsqueeze(-1).expand_as(point_embedding)
+        point_embedding = torch.where(mask, point_embedding + self.point_embeddings[0].weight, point_embedding)
+        mask = (labels == 1).unsqueeze(-1).expand_as(point_embedding)
+        point_embedding = torch.where(mask, point_embedding + self.point_embeddings[1].weight, point_embedding)
+        return point_embedding
+    
+    def coreml_forward(
+        self,
+        points: torch.Tensor,
+        labels: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        point_embeddings = self._embed_points_coreml(points, labels)
+        dense_embeddings = self.no_mask_embed.weight.reshape(1, -1, 1, 1).expand(
+            1, -1, self.image_embedding_size[0], self.image_embedding_size[1]
+        )
+
+        return point_embeddings, dense_embeddings
 
 
 class PositionEmbeddingRandom(nn.Module):
